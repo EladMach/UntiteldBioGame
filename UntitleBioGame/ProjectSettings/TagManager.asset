@@ -4,12 +4,8 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Heart
-  - Lungs
-  - Digestive
-  - BodyCells
-  - ImmuneSystem
   - Virus
+  - Waypoint
   layers:
   - Default
   - TransparentFX

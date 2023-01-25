@@ -23,20 +23,9 @@ public class GameManager : MonoBehaviour
   private Button restartButton;
   private Dictionary<ResourceType, ResourceUI> resourcePoolItems;
 
-
   // Resources
   Dictionary<ResourceType, ResourceStock> resourcesPool;
   Dictionary<ResourceType, string> resourceColors;
-
-
-  [SerializeField]
-  Resource[] intake;
-
-  [SerializeField]
-  int intakeIntervalTimeInSec;
-
-  private float lastIntakeTime;
-
 
   private void Awake()
   {
@@ -56,7 +45,6 @@ public class GameManager : MonoBehaviour
 
   private void Update()
   {
-    Intake();
     CheckGameOver();
     TooltipDetector();
   }
@@ -148,21 +136,16 @@ public class GameManager : MonoBehaviour
     return resourcesPool[type];
   }
 
-  public string GetResourceColor(ResourceType type)
+  public string GetResourceColorString(ResourceType type)
   {
     return resourceColors[type];
   }
-
-
-  void Intake()
+  public Color GetResourceColor(ResourceType type)
   {
-    if (lastIntakeTime + intakeIntervalTimeInSec < Time.time)
-    {
-      foreach (var resource in intake)
-      {
-        UpdateResource(resource.type, resource.value);
-      }
-    }
+    string colorString = GetResourceColorString(type);
+    Color color;
+    ColorUtility.TryParseHtmlString(colorString, out color);
+    return color;
   }
 
   void TooltipDetector()

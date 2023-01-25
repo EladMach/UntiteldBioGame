@@ -26,9 +26,7 @@ public class ResourceUI : MonoBehaviour
 
   void Start()
   {
-    Color resourceColor;
-    ColorUtility.TryParseHtmlString(GameManager.Instance.GetResourceColor(resourceType), out resourceColor);
-    icon.color = resourceColor;
+    icon.color = GameManager.Instance.GetResourceColor(resourceType);
   }
 
 

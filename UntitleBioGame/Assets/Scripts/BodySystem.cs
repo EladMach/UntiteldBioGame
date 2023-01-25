@@ -14,9 +14,6 @@ public class BodySystem : MonoBehaviour
   [SerializeField]
   public int level;
 
-    [SerializeField]
-    public int health;
-    
   [SerializeField]
   int generateIntervalTimeInSec;
   [SerializeField]
@@ -24,19 +21,29 @@ public class BodySystem : MonoBehaviour
 
   [SerializeField]
   Resource[] output;
+
   [SerializeField]
   SystemCondition[] conditions;
 
+  [SerializeField]
+  Line[] inputLines;
+
+  [SerializeField]
+  Line[] outputLines;
+
+  private int health = 10;
+
   private GameObject warning;
-  private TextMeshPro tooltipText;
+  private TextMeshPro outputText;
+  private Vector3 outputTextInitialPosition;
+  private TextMeshPro inputText;
+  private Vector3 inputTextInitialPosition;
   private Transform cooldownOverlay;
 
   private float lastGenerateTime;
 
   void Start()
   {
-        health = 10;
-
     lastGenerateTime = Time.time;
 
     cooldownOverlay = transform.Find("System/CooldownOverlay");
@@ -44,12 +51,15 @@ public class BodySystem : MonoBehaviour
 
     warning = transform.Find("Warning").gameObject;
     warning.SetActive(false);
-    tooltipText = transform.Find("Tooltip").GetComponent<TextMeshPro>();
-    tooltipText.gameObject.SetActive(false);
+    outputText = transform.Find("OutputText").GetComponent<TextMeshPro>();
+    outputTextInitialPosition = outputText.transform.localPosition;
+    outputText.text = "";
+    inputText = transform.Find("InputText").GetComponent<TextMeshPro>();
+    inputTextInitialPosition = inputText.transform.localPosition;
+    inputText.text = "";
+    HideGenerateTooltip();
 
-    Color systemColor;
-    ColorUtility.TryParseHtmlString(GameManager.Instance.GetResourceColor(mainResourceType), out systemColor);
-    transform.Find("System").GetComponent<SpriteRenderer>().color = systemColor;
+    transform.Find("System").GetComponent<SpriteRenderer>().color = GameManager.Instance.GetResourceColor(mainResourceType);
   }
 
   void Update()
@@ -64,10 +74,10 @@ public class BodySystem : MonoBehaviour
 
     float modifiedTimeInterval = ModifyTimeValue(generateIntervalTimeInSec);
 
-    if (lastGenerateTime + 2 < Time.time)
-    {
-      tooltipText.gameObject.SetActive(false);
-    }
+    // if (lastGenerateTime + 2 < Time.time)
+    // {
+    HideGenerateTooltip();
+    // }
 
     if (level > 0)
     {
@@ -83,30 +93,29 @@ public class BodySystem : MonoBehaviour
         {
           lastGenerateTime = Time.time;
           warning.SetActive(false);
-          string generateText = "";
+          string outputMessage = "";
+          string inputMessage = "";
 
           // Generate output
           foreach (var resource in output)
           {
             int modifiedGeneratedValue = ModifyGenerateValue(resource.value);
-            string color = GameManager.Instance.GetResourceColor(resource.type);
+            string color = GameManager.Instance.GetResourceColorString(resource.type);
             GameManager.Instance.UpdateResource(resource.type, modifiedGeneratedValue);
-            generateText += $"<color={color}>+{modifiedGeneratedValue} {resource.type.ToString()}</color> \n";
+            outputMessage += $"<color={color}>+{modifiedGeneratedValue} {resource.type.ToString()}</color> \n";
           }
-
-          generateText += "\n";
 
           // Pay costs
           foreach (var resource in costs)
           {
             int modifiedGeneratedValue = ModifyGenerateValue(resource.value);
-            string color = GameManager.Instance.GetResourceColor(resource.type);
+            string color = GameManager.Instance.GetResourceColorString(resource.type);
             GameManager.Instance.UpdateResource(resource.type, -modifiedGeneratedValue);
-            generateText += $"<color={color}>-{modifiedGeneratedValue} {resource.type.ToString()}</color> \n";
+            inputMessage += $"<color={color}>-{modifiedGeneratedValue} {resource.type.ToString()}</color> \n";
           }
 
-          tooltipText.gameObject.SetActive(true);
-          tooltipText.text = generateText;
+          ShowGenerateTooltip(outputMessage, true);
+          ShowGenerateTooltip(inputMessage, false);
 
         }
       }
@@ -114,6 +123,60 @@ public class BodySystem : MonoBehaviour
     else
     {
       warning.SetActive(false);
+    }
+  }
+
+  void ShowGenerateTooltip(string text, bool isOutput)
+  {
+    TextMeshPro textUI = isOutput ? outputText : inputText;
+    Vector3 initialTextPosition = isOutput ? outputTextInitialPosition : inputTextInitialPosition; 
+    Line[] connectingLines = isOutput ? outputLines : inputLines;
+
+    textUI.text = text;
+
+    Color color = textUI.color;
+    color.a = 1;
+    textUI.color = color;
+    textUI.transform.localPosition = initialTextPosition;
+
+    foreach (Line line in connectingLines)
+    {
+      line.SetLineColor();
+    }
+
+    // foreach (Line inputLine in inputLines)
+    // {
+    //   inputLine.SetLineColor();
+    // }
+  }
+
+  void HideGenerateTooltip()
+  {
+    Vector3 outputTextPosition = outputText.transform.localPosition;
+    Color outputTextColor = outputText.color;
+    Vector3 inputTextPosition = inputText.transform.localPosition;
+    Color inputTextColor = inputText.color;
+
+    float interpolationValue = (Time.time - lastGenerateTime) / 4;
+
+    outputTextColor.a = Mathf.Lerp(1, 0, interpolationValue);
+    outputTextPosition.y = Mathf.Lerp(outputTextInitialPosition.y, outputTextInitialPosition.y + 0.1f, interpolationValue); ;
+    inputTextColor.a = Mathf.Lerp(1, 0, interpolationValue);
+    inputTextPosition.y = Mathf.Lerp(inputTextInitialPosition.y, inputTextInitialPosition.y + 0.1f, interpolationValue); ;
+
+    outputText.color = outputTextColor;
+    outputText.transform.localPosition = outputTextPosition;
+    inputText.color = inputTextColor;
+    inputText.transform.localPosition = inputTextPosition;
+
+    foreach (Line outputLine in outputLines)
+    {
+      outputLine.HighlightLine(interpolationValue);
+    }
+
+    foreach (Line inputLine in inputLines)
+    {
+      inputLine.HighlightLine(interpolationValue);
     }
   }
 
@@ -165,15 +228,13 @@ public class BodySystem : MonoBehaviour
     }
   }
 
-    private void OnTriggerEnter2D(Collider2D other)
+  private void OnTriggerEnter2D(Collider2D other)
+  {
+    if (other.gameObject.CompareTag("Virus"))
     {
-        if (other.gameObject.CompareTag("Virus"))
-        {
-            Debug.Log("Virus");
-            health--;
-            Destroy(other.gameObject);
-        }
+      Debug.Log("Virus hit system!");
+      health--;
+      Destroy(other.gameObject);
     }
+  }
 }
-
-

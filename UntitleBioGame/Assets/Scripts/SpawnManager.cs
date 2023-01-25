@@ -6,66 +6,67 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    public float _timeBetweenWaves = 5f;
-    public float _countDown = 5f;
-    public int _waveIndex = 0;
-    public float _speed = 10f;
+  [SerializeField]
+  float timeBetweenWaves = 45f;
 
-   
-    public GameObject _virusPrefab;
-    private Canvas gameUI;
-    public TextMeshProUGUI _virusAlertText;
+  [SerializeField]
+  GameObject virusPrefab;
+  [SerializeField]
+  GameObject virusAlert;
 
-    private void Start()
+  private int waveIndex = 0;
+
+  private float lastWaveTime;
+
+  private void Start()
+  {
+    lastWaveTime = Time.time;
+
+    virusAlert.SetActive(false);
+  }
+
+  private void Update()
+  {
+    CountDown();
+  }
+  private void CountDown()
+  {
+    if (lastWaveTime + timeBetweenWaves < Time.time/*  && waveIndex == 0 */)
     {
-        gameUI = GameObject.Find("GameUI").GetComponent<Canvas>();
-        _virusAlertText.gameObject.SetActive(false);
+      lastWaveTime = Time.time;
+      waveIndex++;
+      StartCoroutine(VirusAlertTextRoutine());
+      StartCoroutine(SpawnVirusWave());
+      //   timeBetweenWaves = Random.Range(5, 10);
     }
+  }
 
-    private void Update()
-    {     
-        _timeBetweenWaves = Random.Range(5, 10);
-        CountDown();
-        
-    }
-    private void CountDown()
+  IEnumerator SpawnVirusWave()
+  {
+    for (int i = 0; i < waveIndex * 4; i++)
     {
-        if (_countDown <= 0)
-        {
-            StartCoroutine(SpawnVirusWave());   
-            _waveIndex++;
-            _countDown = _timeBetweenWaves;
-        }
-        _countDown -= Time.deltaTime;
+      SpawnVirus();
+      yield return new WaitForSeconds(3f);
     }
+  }
 
-    IEnumerator SpawnVirusWave()
-    {
-        for (int i = 0; i < _waveIndex; i++)
-        {
-            SpawnVirus();
-            yield return new WaitForSeconds(5f);
-        }
-    }
+  private void SpawnVirus()
+  {
+    // Vector2 posToSpawn = new Vector2(Random.Range(20f, -20f), Random.Range(-6f, 6f));
+    Vector2 posToSpawn = transform.position;
+    GameObject newVirus = Instantiate(virusPrefab, posToSpawn, Quaternion.identity);
+  }
 
-    private void SpawnVirus()
+  IEnumerator VirusAlertTextRoutine()
+  {
+    while (lastWaveTime + 4 > Time.time)
     {
-        _virusAlertText.gameObject.SetActive(true);
-        StartCoroutine(VirusAlertTextRoutine());
-        Vector2 posToSpawn = new Vector2(Random.Range(20f, -20f), Random.Range(-6f, 6f));
-        GameObject newVirus = Instantiate(_virusPrefab, posToSpawn, Quaternion.identity);
+      virusAlert.SetActive(true);
+      //   virusAlertText.text = "VIRUS ALERT";
+      yield return new WaitForSeconds(0.5f);
+      virusAlert.SetActive(false);
+      //   virusAlertText.text = "";
+      yield return new WaitForSeconds(0.5f);
     }
-
-    IEnumerator VirusAlertTextRoutine()
-    {
-        while (true)
-        {
-            Debug.Log("VirusAlert");
-            _virusAlertText.text = "VIRUS ALERT";
-            yield return new WaitForSeconds(0.5f);
-            _virusAlertText.text = "";
-            yield return new WaitForSeconds(0.5f);
-            
-        }
-    }
+  }
 }

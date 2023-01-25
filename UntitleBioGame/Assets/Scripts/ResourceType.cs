@@ -7,4 +7,3 @@ public enum ResourceType
   WhiteCell,
   Energy
 }
-
