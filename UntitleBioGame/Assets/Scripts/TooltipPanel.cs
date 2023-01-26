@@ -11,7 +11,7 @@ public class TooltipPanel : MonoBehaviour
   TextMeshProUGUI tooltipText;
 
   // Start is called before the first frame update
-  void Start()
+  void Awake()
   {
     tooltipTitle = transform.Find("Title").GetComponent<TextMeshProUGUI>();
     tooltipText = transform.Find("Text").GetComponent<TextMeshProUGUI>();

@@ -27,6 +27,11 @@ public class Line : MonoBehaviour
     {
       lineRenderer.SetPosition(i, connectors[i].transform.position);
       connectors[i].gameObject.SetActive(false);
+      // if (i > 0 && i < connectors.Length - 1) {
+      //   connectors[i].gameObject.SetActive(false);
+      // } else {
+      //   connectors[i].GetComponent<SpriteRenderer>().color = GameManager.Instance.GetResourceColor(resourceType);
+      // }
     }
   }
   void Start()
